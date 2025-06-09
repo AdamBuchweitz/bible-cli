@@ -22,6 +22,70 @@ let parse_translation json =
     numberOfBooks = json |> member "numberOfBooks" |> to_int;
   }
 
+let parse_book json =
+  {
+    id = json |> member "id" |> to_string;
+    translationId = json |> member "translationId" |> to_string;
+    name = json |> member "name" |> to_string;
+    commonName = json |> member "commonName" |> to_string;
+    title = json |> member "title" |> to_string;
+    order = json |> member "order" |> to_int;
+    numberOfChapters = json |> member "numberOfChapters" |> to_int;
+    firstChapterApiLink = json |> member "firstChapterApiLink" |> to_string;
+    lastChapterApiLink = json |> member "lastChapterApiLink" |> to_string;
+  }
+
+let parse_verse_content json =
+  match json with
+  | `String s -> Text s
+  | `Assoc _ as obj ->
+    (match member "lineBreak" obj |> to_bool_option,
+      member "noteId" obj |> to_int_option,
+      member "text" obj |> to_string_option,
+      member "poem" obj |> to_int_option with
+      | Some true, _, _, _ -> LineBreak
+      | _, Some noteId, _, _ -> Note { noteId; }
+      | _, _, Some text, Some poem -> Poem { text; poem }
+      | _, _, Some text, None -> Poem { text; poem = 0 }
+      | _, _, None, Some poem -> Poem { text = ""; poem }
+      | _, _, None, None -> failwith "Object missing both text and poem fields")
+  | _ -> failwith "Invalid content item"
+
+let parse_chapter_content json =
+  let content_type = json |> member "type" |> to_string in
+  match content_type with
+  | "verse" -> Verse { number = json |> member "number" |> to_int; content = json |> member "content" |> to_list |> List.map parse_verse_content }
+  | "heading" -> Heading { content = json |> member "content" |> to_list |> List.map to_string }
+  | "line_break" -> LineBreak 
+  | _ -> failwith ("Unknown type: " ^ content_type)
+
+let parse_chapter json =
+  {
+    number = json |> member "number" |> to_int;
+    content = json |> member "content" |> to_list |> List.map parse_chapter_content
+  }
+
+let parse_chapter_response json = 
+  {
+    numberOfVerses = json |> member "numberOfVerses" |> to_int;
+    translation = json |> member "translation" |> parse_translation;
+    chapter = json |> member "chapter" |> parse_chapter;
+    book = json |> member "book" |> parse_book;
+  }
+
+let format_verse content =
+  List.fold_left (fun acc -> function
+    | Text t -> acc ^ t
+    | Poem p -> acc ^ "\n" ^ String.make p.poem '\t' ^ p.text
+    | LineBreak -> acc ^ "\n"
+    | Note _ -> acc
+  ) "" content
+
+(* Fetch Chapter *)
+let fetch_chapter translation book chapter =
+  fetch_json (url_base ^ String.uppercase_ascii translation ^ "/" ^ book ^ "/" ^ chapter ^ ".json")
+  |> Lwt.map parse_chapter_response
+  |> Lwt_main.run
 
 (* Fetch Translations *)
 let fetch_translations =
