@@ -13,7 +13,7 @@
     - [x] Books
   - [ ] Read
     - [ ] Verse
-    - [ ] Chapter
+    - [x] Chapter
     - [ ] Book
     - [ ] Bible
 - [ ] Flag to sort books by chronology
