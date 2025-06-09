@@ -7,12 +7,12 @@
 - [x] Successfully parsed the complicated json structure,
 - [x] Printing it out formatted correctly,
 - [ ] Books with spaces
-- [ ] Define CLI commands
+- [x] Define CLI commands
   - [x] List
     - [x] Translations
     - [x] Books
   - [ ] Read
-    - [ ] Verse
+    - [x] Verse
     - [x] Chapter
     - [ ] Book
     - [ ] Bible

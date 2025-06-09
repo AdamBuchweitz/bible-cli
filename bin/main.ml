@@ -8,8 +8,7 @@ let default =
   ] in
   Cmd.group (Cmd.info "bible" ~version: "0.1" ~doc ~man) [
     Commands.Cmd_list.cmd;
-    Commands.Cmd_chapter.cmd;
-    Commands.Cmd_verse.cmd;
+    Commands.Cmd_read.cmd;
   ]
 
 let () = exit (Cmdliner.Cmd.eval default)

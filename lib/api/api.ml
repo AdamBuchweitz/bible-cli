@@ -87,16 +87,26 @@ let fetch_chapter translation book chapter =
   |> Lwt.map parse_chapter_response
   |> Lwt_main.run
 
-(* Fetch Translations *)
+let fetch_verse translation book chapter verse =
+  fetch_json (url_base ^ String.uppercase_ascii translation ^ "/" ^ book ^ "/" ^ chapter ^ ".json")
+  |> Lwt.map parse_chapter_response
+  |> Lwt_main.run
+  |> fun chapter_response -> 
+      List.find_map (function
+        | Verse v when v.number = verse -> Some (format_verse v.content)
+        | _ -> None
+      ) chapter_response.chapter.content
+
 let fetch_translations =
   let parse_translations_response json = 
     json |> member "translations" |> to_list |> List.map parse_translation in
   fetch_json (url_base ^ "available_translations.json")
   |> Lwt.map parse_translations_response
+  |> Lwt_main.run 
 
-(* Fetch List of Books *)
 let fetch_books translation =
   let parse_books_response json =
     json |> member "books" |> to_list |> List.map parse_book in
   fetch_json (url_base ^ translation ^ "/books.json")
   |> Lwt.map parse_books_response
+  |> Lwt_main.run 
