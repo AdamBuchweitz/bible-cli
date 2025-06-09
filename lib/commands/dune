@@ -1,0 +1,7 @@
+(library
+ (public_name bible.commands)
+ (name commands)
+ (inline_tests)
+ (libraries bible.models bible.api cmdliner)
+ (preprocess
+  (pps ppx_inline_test ppx_assert ppx_expect)))

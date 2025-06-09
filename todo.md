@@ -3,14 +3,14 @@
 ## Now
 
 - [x] New project in OCaml,
-- [ ] Fetching data from API,
-- [ ] Successfully parsed the complicated json structure,
-- [ ] Printing it out formatted correctly,
+- [x] Fetching data from API,
+- [x] Successfully parsed the complicated json structure,
+- [x] Printing it out formatted correctly,
 - [ ] Books with spaces
 - [ ] Define CLI commands
-  - [ ] List
-    - [ ] Translations
-    - [ ] Books
+  - [x] List
+    - [x] Translations
+    - [x] Books
   - [ ] Read
     - [ ] Verse
     - [ ] Chapter

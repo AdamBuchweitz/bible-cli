@@ -1,0 +1,3 @@
+(library
+ (public_name bible.models)
+ (name models))

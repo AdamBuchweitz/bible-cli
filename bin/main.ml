@@ -7,6 +7,7 @@ let default =
     `P "Email bug reports to adam@buchweitz.life"
   ] in
   Cmd.group (Cmd.info "bible" ~version: "0.1" ~doc ~man) [
+    Commands.Cmd_list.cmd;
     Commands.Cmd_chapter.cmd;
     Commands.Cmd_verse.cmd;
   ]
