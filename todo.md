@@ -2,7 +2,7 @@
 
 ## Now
 
-- [ ] New project in OCaml,
+- [x] New project in OCaml,
 - [ ] Fetching data from API,
 - [ ] Successfully parsed the complicated json structure,
 - [ ] Printing it out formatted correctly,

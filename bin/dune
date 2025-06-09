@@ -1,0 +1,4 @@
+(executable
+ (public_name bible)
+ (name main)
+ (libraries bible.commands cmdliner lwt yojson cohttp-lwt-unix))
