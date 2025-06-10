@@ -14,7 +14,7 @@
   - [ ] Read
     - [x] Verse
     - [x] Chapter
-    - [ ] Book
+    - [x] Book
     - [ ] Bible
 - [ ] Flag to sort books by chronology
 
