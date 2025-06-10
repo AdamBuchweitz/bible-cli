@@ -1,3 +1,4 @@
+open Printf
 open Lwt.Syntax
 open Cohttp_lwt_unix
 open Yojson.Safe.Util
@@ -73,27 +74,19 @@ let parse_chapter_response json =
     book = json |> member "book" |> parse_book;
   }
 
-let format_verse content =
-  List.fold_left (fun acc -> function
-    | Text t -> acc ^ t
-    | Poem p -> acc ^ "\n" ^ String.make p.poem '\t' ^ p.text
-    | LineBreak -> acc ^ "\n"
-    | Note _ -> acc
-  ) "" content
-
 (* Fetch Chapter *)
 let fetch_chapter translation book chapter =
-  fetch_json (url_base ^ String.uppercase_ascii translation ^ "/" ^ book ^ "/" ^ chapter ^ ".json")
+  fetch_json (sprintf "%s%s/%s/%d.json" url_base (String.uppercase_ascii translation) book chapter)
   |> Lwt.map parse_chapter_response
   |> Lwt_main.run
 
 let fetch_verse translation book chapter verse =
-  fetch_json (url_base ^ String.uppercase_ascii translation ^ "/" ^ book ^ "/" ^ chapter ^ ".json")
+  fetch_json (sprintf "%s%s/%s/%d.json" url_base (String.uppercase_ascii translation) book chapter)
   |> Lwt.map parse_chapter_response
   |> Lwt_main.run
   |> fun chapter_response -> 
       List.find_map (function
-        | Verse v when v.number = verse -> Some (format_verse v.content)
+        | Verse v when v.number = verse -> Some(v.content)
         | _ -> None
       ) chapter_response.chapter.content
 
