@@ -2,25 +2,15 @@ open Printf
 open Cmdliner
 open Cmdliner.Term.Syntax
 open Models
+open Bible.Formatter
 
 let get_chapter book chap =
   let response = Api.fetch_chapter "BSB" book chap in
-  Some (List.fold_left
-    (fun acc item -> acc ^ "\n" ^ (match item with
-      | LineBreak -> ""
-      | Heading x -> List.fold_left (fun acc c -> acc ^ c) "" x.content
-      | Verse x -> (string_of_int x.number) ^ "\n" ^ List.fold_left
-        (fun acc c -> acc ^ match c with
-          | Text t -> t
-          | Poem p -> "\n" ^ (String.make p.poem '\t') ^ p.text
-          | LineBreak -> "\n"
-          | Note _ -> ""
-        ) "" x.content
-    )) "" response.chapter.content)
-
+  Some (format_chapter_content response.chapter.content)
 
 let get_verse book chap verse =
   Api.fetch_verse "BSB" book chap verse
+  |> Option.map format_verse
 
 let read book (chapter: string option) (verse: int option) =
   let opt = match chapter with
@@ -40,7 +30,7 @@ let book =
 
 let chapter =
   let doc = "$(docv) is the chapter of the Bible." in
-  Arg.(value & pos 1 (some string) None & info [] ~doc ~docv:"CHAPTER")
+  Arg.(value & pos 1 (some int) None & info [] ~doc ~docv:"CHAPTER")
 
 let verse =
   let doc = "$(docv) is the verse of the Bible." in
