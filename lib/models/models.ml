@@ -23,11 +23,18 @@ type verse_content =
   | Text of string
   | Poem of { text: string; poem: int }
   | Note of { noteId: int }
+  | InlineHeading of { heading: string }
   | LineBreak
+
+type hebrew_subtitle_content =
+  | Text of string
+  | Poem of { text: string; poem: int }
+  | Note of { noteId: int }
 
 type chapter_content = 
   | Heading of { content: string list }
   | Verse of { number: int; content: verse_content list  }
+  | HebrewSubtitle of { content: hebrew_subtitle_content list }
   | LineBreak
 
 type chapter = {
