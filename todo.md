@@ -17,7 +17,7 @@
     - [x] Book
     - [x] Bible
 - [x] Support "hebrew_subtitle"
-- [ ] Flag to sort books by chronology
+- [x] Flag to sort books by chronology
 
 ## Upcoming
 
