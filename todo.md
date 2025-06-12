@@ -16,6 +16,7 @@
     - [x] Chapter
     - [x] Book
     - [ ] Bible
+- [x] Support "hebrew_subtitle"
 - [ ] Flag to sort books by chronology
 
 ## Upcoming
