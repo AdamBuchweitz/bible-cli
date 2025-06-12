@@ -25,3 +25,5 @@ let format_chapter_content chapter_content =
       | HebrewSubtitle x -> sprintf "\n%s" (format_hebrew_subtitle x.content)
       | Verse x -> sprintf "%d\n%s" x.number (format_verse x.content)
     )) "" chapter_content
+
+let space_to_underscore = String.map (fun c -> if c = ' ' then '_' else c)

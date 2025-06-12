@@ -14,7 +14,8 @@ let get_verse book chap verse =
 
 let build_book book =
   let rec get_chapter acc chapter =
-    let response = Api.fetch_chapter "BSB" book chapter in
+    let spaced_book = book |> space_to_underscore in
+    let response = Api.fetch_chapter "BSB" spaced_book chapter in
     if response.chapter.number < response.book.numberOfChapters then
       get_chapter (sprintf "%s\n\n# Chapter %d\n%s" acc response.chapter.number (format_chapter_content response.chapter.content)) (response.chapter.number + 1)
     else
