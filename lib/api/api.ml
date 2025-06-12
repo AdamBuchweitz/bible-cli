@@ -36,25 +36,44 @@ let parse_book json =
     lastChapterApiLink = json |> member "lastChapterApiLink" |> to_string;
   }
 
-let parse_verse_content json =
+let parse_hebrew_subtitle_content json =
   match json with
   | `String s -> Text s
   | `Assoc _ as obj ->
-    (match member "lineBreak" obj |> to_bool_option,
+    (match
       member "noteId" obj |> to_int_option,
       member "text" obj |> to_string_option,
       member "poem" obj |> to_int_option with
-      | Some true, _, _, _ -> LineBreak
-      | _, Some noteId, _, _ -> Note { noteId; }
-      | _, _, Some text, Some poem -> Poem { text; poem }
-      | _, _, Some text, None -> Poem { text; poem = 0 }
-      | _, _, None, Some poem -> Poem { text = ""; poem }
-      | _, _, None, None -> failwith "Object missing both text and poem fields")
+      | Some noteId, _, _ -> Note { noteId; }
+      | _, Some text, Some poem -> Poem { text; poem }
+      | _, Some text, None -> Poem { text; poem = 0 }
+      | _, None, Some poem -> Poem { text = ""; poem }
+      | _, None, None -> failwith "Object missing both text and poem fields")
   | _ -> failwith "Invalid content item"
+
+let parse_verse_content json =
+  (match json with
+  | `String s -> Text s
+  | `Assoc _ as obj ->
+    (match
+      member "lineBreak" obj |> to_bool_option,
+      member "noteId" obj |> to_int_option,
+      member "text" obj |> to_string_option,
+      member "poem" obj |> to_int_option,
+      member "heading" obj |> to_string_option with
+      | _, _, _, _, Some heading -> InlineHeading { heading;}
+      | Some true, _, _, _, _ -> LineBreak
+      | _, Some noteId, _, _, _ -> Note { noteId; }
+      | _, _, Some text, Some poem, _ -> Poem { text; poem }
+      | _, _, Some text, None, _ -> Poem { text; poem = 0 }
+      | _, _, None, Some poem, _ -> Poem { text = ""; poem }
+      | _, _, None, None, _ -> failwith "Object missing both text and poem fields")
+  | _ -> failwith "Invalid content item" : verse_content)
 
 let parse_chapter_content json =
   let content_type = json |> member "type" |> to_string in
   match content_type with
+  | "hebrew_subtitle" -> HebrewSubtitle { content = json |> member "content" |> to_list |> List.map parse_hebrew_subtitle_content }
   | "verse" -> Verse { number = json |> member "number" |> to_int; content = json |> member "content" |> to_list |> List.map parse_verse_content }
   | "heading" -> Heading { content = json |> member "content" |> to_list |> List.map to_string }
   | "line_break" -> LineBreak 
