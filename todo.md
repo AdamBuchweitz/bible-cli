@@ -6,7 +6,7 @@
 - [x] Fetching data from API,
 - [x] Successfully parsed the complicated json structure,
 - [x] Printing it out formatted correctly,
-- [ ] Books with spaces
+- [x] Books with spaces
 - [x] Define CLI commands
   - [x] List
     - [x] Translations
