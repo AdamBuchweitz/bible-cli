@@ -13,7 +13,9 @@ let get_verse book chap verse =
   |> Option.map format_verse
 
 let build_book book =
+  printf "Build the book of %s%!\n" book;
   let rec get_chapter acc chapter =
+    printf "Fetching %s %d%!\n" book chapter;
     let spaced_book = book |> space_to_underscore in
     let response = Api.fetch_chapter "BSB" spaced_book chapter in
     if response.chapter.number < response.book.numberOfChapters then
@@ -23,20 +25,35 @@ let build_book book =
   in
   get_chapter "" 1
 
+let build_bible () =
+  printf "No reference provided. Build the whole Bible? (This will take a while) [y/N]: %!";
+  let char = input_char stdin in
+  let _ = input_char stdin in
+  if (Char.lowercase_ascii char) = 'y' then
+    let book_list = Api.fetch_books "BSB"
+      |> List.rev
+      |> List.take 2 in
+    let book_strings = List.map (fun book -> build_book book.id) book_list in
+    List.fold_left (fun acc book_string -> sprintf "%s\n\n%s" acc book_string) "" book_strings
+  else
+    ""
+
 let read book chapter verse =
-  (match chapter, verse with
-    | None, _ -> build_book book
-    | Some chap, None ->
-      get_chapter book chap
-      |> Option.fold ~none: (sprintf "Unable to find %s %d" book chap) ~some: Fun.id
-    | Some chap, Some v ->
-      get_verse book chap v
-      |> Option.fold ~none: (sprintf "Unable to find %s %d:%d" book chap v) ~some: Fun.id)
+  (match book, chapter, verse with
+    | None, _, _ -> build_bible ()
+    | Some b, None, _ -> build_book b
+    | Some b, Some chap, None ->
+      get_chapter b chap
+      |> Option.fold ~none: (sprintf "Unable to find %s %d" b chap) ~some: Fun.id
+    | Some b, Some chap, Some v ->
+      get_verse b chap v
+      |> Option.fold ~none: (sprintf "Unable to find %s %d:%d" b chap v) ~some: Fun.id
+  )
   |> print_endline
 
 let book =
   let doc = "$(docv) is the book of the Bible." in
-  Arg.(value & pos 0 string "-" & info [] ~doc ~docv:"BOOK")
+  Arg.(value & pos 0 (some string) None & info [] ~doc ~docv:"BOOK")
 
 let chapter =
   let doc = "$(docv) is the chapter of the Bible." in
@@ -52,11 +69,11 @@ let cmd =
   read book chapter verse
 
 let%expect_test "read a verse" =
-  read "John" (Some 3) (Some 16);
+  read (Some "John") (Some 3) (Some 16);
   [%expect{| For God so loved the world that He gave His one and onlySon, that everyone who believes in Him shall not perish but have eternal life. |}]
 
 let%expect_test "read a chapter" =
-  read "Psalms" (Some 117) None;
+  read (Some "Psalms") (Some 117) None;
   [%expect{|
   ## Extol Him, All You Peoples
   1
@@ -72,7 +89,7 @@ let%expect_test "read a chapter" =
   |}]
 
 let%expect_test "read a book" =
-  read "Titus" None None;
+  read (Some "Titus") None None;
   [%expect{|
   # Chapter 1
 

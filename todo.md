@@ -11,11 +11,11 @@
   - [x] List
     - [x] Translations
     - [x] Books
-  - [ ] Read
+  - [x] Read
     - [x] Verse
     - [x] Chapter
     - [x] Book
-    - [ ] Bible
+    - [x] Bible
 - [x] Support "hebrew_subtitle"
 - [ ] Flag to sort books by chronology
 
