@@ -4,8 +4,8 @@ open Cmdliner.Term.Syntax
 open Models
 open Bible.Formatter
 
-let get_chapter book chap =
-  let response = Api.fetch_chapter "BSB" book chap in
+let get_chapter translation book chap =
+  let response = Api.fetch_chapter translation book chap in
   Some (format_chapter_content response.chapter.content)
 
 let get_verse book chap verse =
@@ -38,12 +38,13 @@ let build_bible () =
   else
     ""
 
-let read book chapter verse =
+let read book chapter verse ~translation =
+  printf "\nUsing the %s translation.\n%!" translation;
   (match book, chapter, verse with
     | None, _, _ -> build_bible ()
     | Some b, None, _ -> build_book b
     | Some b, Some chap, None ->
-      get_chapter b chap
+      get_chapter translation b chap
       |> Option.fold ~none: (sprintf "Unable to find %s %d" b chap) ~some: Fun.id
     | Some b, Some chap, Some v ->
       get_verse b chap v
@@ -63,17 +64,21 @@ let verse =
   let doc = "$(docv) is the verse of the Bible." in
   Arg.(value & pos 2 (some int) None & info [] ~doc ~docv:"VERSE")
 
+let translation =
+  let doc = "$(docv) is which translation to use." and docv = "TRANSLATION" in
+  Arg.(value & opt string "BSB" & info ["translation"] ~doc ~docv)
+
 let cmd =
   Cmd.v (Cmd.info "read" ~doc:"Prints a reference") @@
-  let+ book and+ chapter and+ verse in
-  read book chapter verse
+  let+ translation and+ book and+ chapter and+ verse in
+  read book chapter verse ~translation
 
 let%expect_test "read a verse" =
-  read (Some "John") (Some 3) (Some 16);
+  read ~translation: "BSB" (Some "John") (Some 3) (Some 16);
   [%expect{| For God so loved the world that He gave His one and onlySon, that everyone who believes in Him shall not perish but have eternal life. |}]
 
 let%expect_test "read a chapter" =
-  read (Some "Psalms") (Some 117) None;
+  read ~translation: "BSB" (Some "Psalms") (Some 117) None;
   [%expect{|
   ## Extol Him, All You Peoples
   1
@@ -89,7 +94,7 @@ let%expect_test "read a chapter" =
   |}]
 
 let%expect_test "read a book" =
-  read (Some "Titus") None None;
+  read (Some "Titus") None None ~translation: "BSB" ;
   [%expect{|
   # Chapter 1
 
