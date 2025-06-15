@@ -7,6 +7,10 @@
 
 ## Upcoming
 
+- [ ] Formatting options
+  - [ ] Hide chapter breaks
+  - [ ] Hide verses
+  - [ ] Hide headings
 - [ ] Improve help output / man pages
 - [ ] Progress indications
 

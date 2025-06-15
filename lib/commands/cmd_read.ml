@@ -38,19 +38,24 @@ let build_bible () =
   else
     ""
 
-let run book chapter verse ~translation =
+let run book chapter verse ~translation ~output =
+  Option.iter (fun output -> printf "\nSaving output to %s.\n%!" output) output;
   printf "\nUsing the %s translation.\n%!" translation;
   (match book, chapter, verse with
-    | None, _, _ -> build_bible ()
-    | Some b, None, _ -> build_book b
+    | None, _, _ -> build_bible (), "Bible"
+    | Some b, None, _ -> build_book b, b
     | Some b, Some chap, None ->
       get_chapter translation b chap
-      |> Option.fold ~none: (sprintf "Unable to find %s %d" b chap) ~some: Fun.id
+      |> Option.fold ~none: (sprintf "Unable to find %s %d" b chap) ~some: Fun.id, (sprintf "%s_%d" b chap)
     | Some b, Some chap, Some v ->
       get_verse b chap v
-      |> Option.fold ~none: (sprintf "Unable to find %s %d:%d" b chap v) ~some: Fun.id
+      |> Option.fold ~none: (sprintf "Unable to find %s %d:%d" b chap v) ~some: Fun.id, (sprintf "%s_%d_%d" b chap v)
   )
-  |> print_endline
+  |> ( fun (content, filename) -> match output with
+      | None -> print_endline content
+      | Some dir ->
+        printf "\n Filename: %s%!" filename;
+        Out_channel.with_open_text (dir ^ filename ^ ".md") (fun oc -> output_string oc content))
 
 let book =
   let doc = "$(docv) is the book of the Bible." in
@@ -66,19 +71,23 @@ let verse =
 
 let translation =
   let doc = "$(docv) is which translation to use." and docv = "TRANSLATION" in
-  Arg.(value & opt string "BSB" & info ["translation"] ~doc ~docv)
+  Arg.(value & opt string "BSB" & info ["t"; "translation"] ~doc ~docv)
+
+let output =
+  let doc = "$(docv) is the destination directory." and docv = "OUTPUT" in
+  Arg.(value & opt (some string) None & info ["o"; "output"] ~doc ~docv)
 
 let cmd =
   Cmd.v (Cmd.info "read" ~doc:"Prints a reference") @@
-  let+ translation and+ book and+ chapter and+ verse in
-  run book chapter verse ~translation 
+  let+ translation and+ book and+ chapter and+ verse and+ output in
+  run book chapter verse ~translation ~output
 
 let%expect_test "read a verse" =
-  run ~translation: "BSB" (Some "John") (Some 3) (Some 16);
+  run ~translation: "BSB" (Some "John") (Some 3) (Some 16) ~output: None;
   [%expect{| For God so loved the world that He gave His one and onlySon, that everyone who believes in Him shall not perish but have eternal life. |}]
 
 let%expect_test "read a chapter" =
-  run ~translation: "BSB" (Some "Psalms") (Some 117) None;
+  run ~translation: "BSB" (Some "Psalms") (Some 117) None ~output: None;
   [%expect{|
   ## Extol Him, All You Peoples
   1
@@ -94,7 +103,7 @@ let%expect_test "read a chapter" =
   |}]
 
 let%expect_test "read a book" =
-  run (Some "Titus") None None ~translation: "BSB" ;
+  run (Some "Titus") None None ~translation: "BSB" ~output: None;
   [%expect{|
   # Chapter 1
 
