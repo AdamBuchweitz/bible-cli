@@ -7,8 +7,10 @@
 
 ## Upcoming
 
-- [ ] Improve help output / man pages
-- [ ] Progress indications
+- [ ] Formatting options
+  - [ ] Hide chapter breaks
+  - [ ] Hide verse numbers
+  - [ ] Hide headings
 
 ## A bit later
 
@@ -19,6 +21,8 @@
   - [ ] Chapter
   - [ ] Book
   - [ ] Bible
+- [ ] Improve help output / man pages
+- [ ] Progress indications
 
 ## Much later
 
