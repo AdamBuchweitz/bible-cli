@@ -11,9 +11,9 @@ let sort_by_chronological_order books =
   List.sort (fun a b -> compare a.chronological_order b.chronological_order) books
 
 let list_translations () =
-  let translations_list = Api.fetch_translations in
-  List.filter (fun item -> item.language = "eng") translations_list
-  |> List.fold_left (fun acc item -> sprintf "%s\n%10s | %s" acc item.shortName item.englishName) ""
+  Api.fetch_translations
+  |> List.filter (fun item -> item.language = "eng")
+  |> List.fold_left (fun acc (item:translation) -> sprintf "%s\n%12s | %s" acc item.id item.englishName) ""
   |> print_endline
 
 type sort_order = Traditional | Alphabetical | Chronological

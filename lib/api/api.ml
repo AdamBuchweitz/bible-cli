@@ -95,7 +95,7 @@ let parse_chapter_response json =
 
 (* Fetch Chapter *)
 let fetch_chapter translation book chapter =
-  fetch_json (sprintf "%s%s/%s/%d.json" url_base (String.uppercase_ascii translation) book chapter)
+  fetch_json (sprintf "%s%s/%s/%d.json" url_base translation book chapter)
   |> Lwt.map parse_chapter_response
   |> Lwt_main.run
 
