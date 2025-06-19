@@ -1,5 +1,5 @@
 (library
- (public_name bible.models)
- (name models)
+ (public_name bible.config)
+ (name config)
  (preprocess
   (pps ppx_inline_test ppx_assert ppx_expect)))
