@@ -2,19 +2,17 @@
 
 ## Now
 
-- [ ] Saving to disk (--output [DIRECTORY])
-- [x] Flag for translation
-
-## Upcoming
-
 - [ ] Formatting options
   - [ ] Hide chapter breaks
   - [ ] Hide verse numbers
   - [ ] Hide headings
 
-## A bit later
+## Upcoming
 
 - [ ] Obsidian template, linking verses, etc (handlebars?)
+
+## A bit later
+
 - [ ] Build Obsidian "maps"
     notes with either links to their children,
     or directly embedding children (or mix of both?)
@@ -49,3 +47,5 @@
     - [x] Bible
 - [x] Support "hebrew_subtitle"
 - [x] Flag to sort books by chronology
+- [x] Flag for translation
+- [x] Saving to disk (--output [DIRECTORY])
