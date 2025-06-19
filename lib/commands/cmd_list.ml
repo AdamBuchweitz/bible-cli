@@ -1,5 +1,6 @@
 open Printf
 open Models
+open Config
 
 let sort_by_traditional_order books = 
   List.sort (fun a b -> compare a.traditional_order b.traditional_order) books
@@ -11,14 +12,14 @@ let sort_by_chronological_order books =
   List.sort (fun a b -> compare a.chronological_order b.chronological_order) books
 
 let list_translations () =
-  Api.fetch_translations
-  |> List.filter (fun item -> item.language = "eng")
+  Api.fetch_translations ()
+  |> List.filter (fun item -> item.language = Defaults.language)
   |> List.fold_left (fun acc (item:translation) -> sprintf "%s\n%12s | %s" acc item.id item.englishName) ""
   |> print_endline
 
 type sort_order = Traditional | Alphabetical | Chronological
 let sort_str = function
-  | Traditional -> "traditional" | Alphabetical -> "alphabetical" | Chronological -> "chronological"
+  | Traditional -> Sorting.traditional | Alphabetical -> Sorting.alphabetical | Chronological -> Sorting.chronological
 
 let list_books sort_order =
   let sort = match sort_order with
@@ -30,10 +31,6 @@ let list_books sort_order =
   |> sort
   |> List.fold_left (fun acc item -> sprintf "%s\n%02d | %s" acc item.traditional_order item.name) ""
   |> print_endline
-
-(*Constants*)
-let s_translations = "translations"
-let s_books = "books"
 
 type list_type = Translations | Books
 
@@ -63,16 +60,16 @@ let sort_order=
 
 let list_type_conv =
   let parse = function
-    | s when s = s_translations -> Ok Translations
-    | s when s = s_books -> Ok Books
-    | s -> Error (`Msg (sprintf "Invalid list type '%s'. Must be %s or %s." s s_translations s_books)) in
+    | s when s = ListTypes.translations -> Ok Translations
+    | s when s = ListTypes.books -> Ok Books
+    | s -> Error (`Msg (sprintf "Invalid list type '%s'. Must be %s or %s." s ListTypes.translations ListTypes.books)) in
   let print fmt = function
-    | Translations -> Format.fprintf fmt "%s" s_translations
-    | Books -> Format.fprintf fmt "%s" s_books in
+    | Translations -> Format.fprintf fmt "%s" ListTypes.translations
+    | Books -> Format.fprintf fmt "%s" ListTypes.books in
   Arg.conv (parse, print)
 
 let arg_type = 
-  let doc = sprintf "Valid arguments are: %s, %s" s_translations s_books in
+  let doc = sprintf "Valid arguments are: %s, %s" ListTypes.translations ListTypes.books in
   Arg.(required & pos 0 (some list_type_conv) None & info [] ~doc ~docv: "TYPE" )
 
 let cmd =

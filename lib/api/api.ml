@@ -3,8 +3,9 @@ open Lwt.Syntax
 open Cohttp_lwt_unix
 open Yojson.Safe.Util
 open Models
+open Config
 
-let url_base = "https://bible.helloao.org/api/"
+let url_base = ApiStrings.base_url
 
 let fetch_json url =
   let* (_, body) = Client.get (Uri.of_string url) in
@@ -48,8 +49,8 @@ let parse_hebrew_subtitle_content json =
       | _, Some text, Some poem -> Poem { text; poem }
       | _, Some text, None -> Poem { text; poem = 0 }
       | _, None, Some poem -> Poem { text = ""; poem }
-      | _, None, None -> failwith "Object missing both text and poem fields")
-  | _ -> failwith "Invalid content item"
+      | _, None, None -> failwith ErrorMessages.missing_text_and_poem)
+  | _ -> failwith ErrorMessages.invalid_content_item
 
 let parse_verse_content json =
   (match json with
@@ -67,8 +68,8 @@ let parse_verse_content json =
       | _, _, Some text, Some poem, _ -> Poem { text; poem }
       | _, _, Some text, None, _ -> Poem { text; poem = 0 }
       | _, _, None, Some poem, _ -> Poem { text = ""; poem }
-      | _, _, None, None, _ -> failwith "Object missing both text and poem fields")
-  | _ -> failwith "Invalid content item" : verse_content)
+      | _, _, None, None, _ -> failwith ErrorMessages.missing_text_and_poem)
+  | _ -> failwith ErrorMessages.invalid_content_item : verse_content)
 
 let parse_chapter_content json =
   let content_type = json |> member "type" |> to_string in
@@ -77,7 +78,7 @@ let parse_chapter_content json =
   | "verse" -> Verse { number = json |> member "number" |> to_int; content = json |> member "content" |> to_list |> List.map parse_verse_content }
   | "heading" -> Heading { content = json |> member "content" |> to_list |> List.map to_string }
   | "line_break" -> LineBreak 
-  | _ -> failwith ("Unknown type: " ^ content_type)
+  | _ -> failwith (sprintf "%s%s" ErrorMessages.unknown_content_type_format content_type)
 
 let parse_chapter json =
   {
@@ -109,16 +110,16 @@ let fetch_verse translation book chapter verse =
         | _ -> None
       ) chapter_response.chapter.content
 
-let fetch_translations =
+let fetch_translations () =
   let parse_translations_response json = 
     json |> member "translations" |> to_list |> List.map parse_translation in
-  fetch_json (url_base ^ "available_translations.json")
+  fetch_json (url_base ^ ApiStrings.translations_endpoint)
   |> Lwt.map parse_translations_response
   |> Lwt_main.run 
 
 let fetch_books translation =
   let parse_books_response json =
     json |> member "books" |> to_list |> List.map parse_book in
-  fetch_json (url_base ^ translation ^ "/books.json")
+  fetch_json (url_base ^ translation ^ ApiStrings.books_endpoint_suffix)
   |> Lwt.map parse_books_response
   |> Lwt_main.run 

@@ -3,6 +3,7 @@ open Cmdliner
 open Cmdliner.Term.Syntax
 open Models
 open Bible.Formatter
+open Config
 
 let build_verse translation book chap verse output =
   Api.fetch_verse translation book chap verse
@@ -30,7 +31,6 @@ let build_book translation book =
 
 let ensure_dir dir =
   if not (Sys.file_exists dir) then
-    Unix.mkdir dir 0o755
 
 let dump_book_as_chapters built_book book_name output_dir =
   ensure_dir output_dir;
@@ -68,7 +68,7 @@ let read_book translation book output =
     |> print_endline
   | Some output_dir ->
     dump_book_as_verses built_book book output_dir;
-    print_endline "Done!"
+    print_endline Messages.done_message
 
 let read_bible translation output =
   printf "No reference provided. Build the whole Bible? (This will take a while) [y/N]: %!";
@@ -92,7 +92,7 @@ let read_bible translation output =
       |> print_endline
     | Some output_dir ->
       List.iter (fun (book_name, book_struct) -> dump_book_as_verses book_struct book_name output_dir) book_lists;
-      print_endline "Done!"
+      print_endline Messages.done_message
 
 let read book chapter verse ~translation ~output =
   Option.iter (fun output -> printf "\nSaving output to %s.\n%!" output) output;
@@ -120,7 +120,7 @@ let verse =
 
 let translation =
   let doc = "$(docv) is which translation to use." and docv = "TRANSLATION" in
-  Arg.(value & opt string "BSB" & info ["t"; "translation"] ~doc ~docv)
+  Arg.(value & opt string Defaults.translation & info ["t"; "translation"] ~doc ~docv)
 
 let output =
   let doc = "$(docv) is the destination directory." and docv = "OUTPUT" in
