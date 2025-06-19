@@ -5,17 +5,37 @@ open Models
 open Bible.Formatter
 open Config
 
+let ensure_dir dir =
+  if not (Sys.file_exists dir) then
+    Unix.mkdir dir Defaults.file_permissions
+
+let save_chapter_verses output_dir book_name chapter_number chapter_content =
+  ensure_dir (sprintf "%s/%s" output_dir book_name);
+  ensure_dir (sprintf "%s/%s/%d" output_dir book_name chapter_number);
+  List.iter (function
+    | Verse v ->
+        Out_channel.with_open_text
+          (sprintf "%s/%s/%d/%02d.md" output_dir book_name chapter_number v.number)
+          (fun oc -> output_string oc (format_verse v.content))
+    | _ -> ()
+  ) chapter_content
+
 let build_verse translation book chap verse output =
   Api.fetch_verse translation book chap verse
   |> Option.map format_verse
   |> Option.fold ~none: (sprintf "Unable to find %s %d:%d" book chap verse) ~some: Fun.id
   |> output
 
-let build_chapter translation book chap =
+let build_chapter translation book chap output =
   let response = Api.fetch_chapter translation book chap in
-  Some (format_chapter_content response.chapter.content)
-  |> Option.fold ~none: (sprintf "Unable to find %s %d" book chap) ~some: Fun.id
-  |> print_endline
+  let content = Some (format_chapter_content response.chapter.content)
+    |> Option.fold ~none: (sprintf "Unable to find %s %d" book chap) ~some: Fun.id
+  in
+  match output with
+  | None -> print_endline content
+  | Some output_dir ->
+    save_chapter_verses output_dir book chap response.chapter.content;
+    print_endline Messages.done_message
 
 let build_book translation book =
   let spaced_book = space_to_underscore book in
@@ -29,9 +49,6 @@ let build_book translation book =
   in
   get_chapter [] 1
 
-let ensure_dir dir =
-  if not (Sys.file_exists dir) then
-
 let dump_book_as_chapters built_book book_name output_dir =
   ensure_dir output_dir;
   ensure_dir (sprintf "%s/%s" output_dir book_name);
@@ -44,18 +61,9 @@ let dump_book_as_chapters built_book book_name output_dir =
     built_book
 
 let dump_book_as_verses ( built_book : chapter list ) book_name output_dir =
-  ensure_dir output_dir;
-  ensure_dir (sprintf "%s/%s" output_dir book_name);
   List.iteri
     (fun chapter_number chapter ->
-      ensure_dir (sprintf "%s/%s/%d" output_dir book_name (chapter_number+1));
-      List.iter (function
-        | Verse v ->
-            Out_channel.with_open_text
-              (sprintf "%s/%s/%d/%02d.md" output_dir book_name (chapter_number+1) v.number)
-              (fun oc -> output_string oc (format_verse v.content))
-        | _ -> ()
-      ) chapter.content
+      save_chapter_verses output_dir book_name (chapter_number+1) chapter.content
     )
     built_book
 
@@ -95,12 +103,14 @@ let read_bible translation output =
       print_endline Messages.done_message
 
 let read book chapter verse ~translation ~output =
-  Option.iter (fun output -> printf "\nSaving output to %s.\n%!" output) output;
+  Option.iter (fun output_dir ->
+    ensure_dir output_dir;
+    printf "\nSaving output to %s.\n%!" output_dir) output;
   (* printf "\nUsing the %s translation.\n%!" translation; *)
   match book, chapter, verse with
     | None, _, _ -> read_bible translation output
     | Some b, None, _ -> read_book translation b output
-    | Some b, Some chap, None -> build_chapter translation b chap
+    | Some b, Some chap, None -> build_chapter translation b chap output
     | Some b, Some chap, Some v -> build_verse translation b chap v (Option.fold
         ~none: print_endline
         ~some: (fun dir -> (fun content -> Out_channel.with_open_text (sprintf "%s/%s_%d_%d.md" dir b chap v) (fun oc -> output_string oc content)))
