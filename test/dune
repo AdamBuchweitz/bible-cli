@@ -1,5 +1,5 @@
 (library
- (name test_bible_fetcher)
+ (name test_bible_cli)
  (inline_tests)
  (preprocess
   (pps ppx_inline_test ppx_assert ppx_expect)))

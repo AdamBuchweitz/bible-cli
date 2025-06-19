@@ -1,0 +1,22 @@
+(lang dune 3.18)
+
+(context default)
+
+(context
+ (opam
+  (name static)
+  (switch default)
+  (env
+   (_
+    (env-vars
+     (OCAMLOPT_FLAGS "-ccopt -static"))))))
+
+; (context
+;  (opam
+;   (name windows)
+;   (switch 4.14.1+mingw64c)
+;   (toolchain windows)
+;   (env
+;    (_
+;     (env-vars
+;      (OCAMLPARAM "-w -40"))))))
