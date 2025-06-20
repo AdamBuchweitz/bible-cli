@@ -49,16 +49,16 @@ let build_book translation book =
   in
   get_chapter [] 1
 
-let dump_book_as_chapters built_book book_name output_dir =
-  ensure_dir output_dir;
-  ensure_dir (sprintf "%s/%s" output_dir book_name);
-  List.iteri
-    (fun chapter_number chapter ->
-      ensure_dir (sprintf "%s/%s/%d" output_dir book_name (chapter_number+1));
-      Out_channel.with_open_text (sprintf "%s/%s/%d.md" output_dir book_name (chapter_number+1)) (fun oc -> output_string oc (format_chapter_content chapter.content));
-      ()
-    )
-    built_book
+(* let dump_book_as_chapters built_book book_name output_dir = *)
+(*   ensure_dir output_dir; *)
+(*   ensure_dir (sprintf "%s/%s" output_dir book_name); *)
+(*   List.iteri *)
+(*     (fun chapter_number chapter -> *)
+(*       ensure_dir (sprintf "%s/%s/%d" output_dir book_name (chapter_number+1)); *)
+(*       Out_channel.with_open_text (sprintf "%s/%s/%d.md" output_dir book_name (chapter_number+1)) (fun oc -> output_string oc (format_chapter_content chapter.content)); *)
+(*       () *)
+(*     ) *)
+(*     built_book *)
 
 let dump_book_as_verses ( built_book : chapter list ) book_name output_dir =
   List.iteri
