@@ -20,13 +20,20 @@ let save_chapter_verses output_dir book_name chapter_number chapter_content =
     | _ -> ()
   ) chapter_content
 
+let save_chapter_as_file output_dir book_name chapter_number chapter_content options =
+  ensure_dir (sprintf "%s/%s" output_dir book_name);
+  let formatted_content = format_chapter_content chapter_content options in
+  Out_channel.with_open_text
+    (sprintf "%s/%s/%02d.md" output_dir book_name chapter_number)
+    (fun oc -> output_string oc formatted_content)
+
 let build_verse translation book chap verse output =
   Api.fetch_verse translation book chap verse
   |> Option.map format_verse
   |> Option.fold ~none: (sprintf "Unable to find %s %d:%d" book chap verse) ~some: Fun.id
   |> output
 
-let build_chapter translation book chap output options =
+let build_chapter translation book chap output options chapters_mode =
   let response = Api.fetch_chapter translation book chap in
   let content = Some (format_chapter_content response.chapter.content options)
     |> Option.fold ~none: (sprintf "Unable to find %s %d" book chap) ~some: Fun.id
@@ -34,7 +41,10 @@ let build_chapter translation book chap output options =
   match output with
   | None -> print_endline content
   | Some output_dir ->
-    save_chapter_verses output_dir book chap response.chapter.content;
+    if chapters_mode then
+      save_chapter_as_file output_dir book chap response.chapter.content options
+    else
+      save_chapter_verses output_dir book chap response.chapter.content;
     print_endline Messages.done_message
 
 let build_book translation book =
@@ -49,17 +59,6 @@ let build_book translation book =
   in
   get_chapter [] 1
 
-let dump_book_as_chapters built_book book_name output_dir =
-  ensure_dir output_dir;
-  ensure_dir (sprintf "%s/%s" output_dir book_name);
-  List.iteri
-    (fun chapter_number chapter ->
-      ensure_dir (sprintf "%s/%s/%d" output_dir book_name (chapter_number+1));
-      Out_channel.with_open_text (sprintf "%s/%s/%d.md" output_dir book_name (chapter_number+1)) (fun oc -> output_string oc (format_chapter_content chapter.content));
-      ()
-    )
-    built_book
-
 let dump_book_as_verses ( built_book : chapter list ) book_name output_dir =
   List.iteri
     (fun chapter_number chapter ->
@@ -67,7 +66,14 @@ let dump_book_as_verses ( built_book : chapter list ) book_name output_dir =
     )
     built_book
 
-let read_book translation book output options =
+let dump_book_as_chapters ( built_book : chapter list ) book_name output_dir options =
+  List.iteri
+    (fun chapter_number chapter ->
+      save_chapter_as_file output_dir book_name (chapter_number+1) chapter.content options
+    )
+    built_book
+
+let read_book translation book output options chapters_mode =
   let built_book = build_book translation book in
   match output with
   | None ->
@@ -80,10 +86,13 @@ let read_book translation book output options =
     |> Str.global_replace (Str.regexp "\n\n\n") "\n\n"
     |> print_endline
   | Some output_dir ->
-    dump_book_as_verses built_book book output_dir;
+    if chapters_mode then
+      dump_book_as_chapters built_book book output_dir options
+    else
+      dump_book_as_verses built_book book output_dir;
     print_endline Messages.done_message
 
-let read_bible translation output options =
+let read_bible translation output options chapters_mode =
   printf "No reference provided. Build the whole Bible? (This will take a while) [y/N]: %!";
   let char = input_char stdin in
   let _ = input_char stdin in
@@ -106,10 +115,14 @@ let read_bible translation output options =
       |> String.concat "\n"
       |> print_endline
     | Some output_dir ->
-      List.iter (fun (book_name, book_struct) -> dump_book_as_verses book_struct book_name output_dir) book_lists;
+      List.iter (fun (book_name, book_struct) -> 
+        if chapters_mode then
+          dump_book_as_chapters book_struct book_name output_dir options
+        else
+          dump_book_as_verses book_struct book_name output_dir) book_lists;
       print_endline Messages.done_message
 
-let read ?format_options book chapter verse ~translation ~output =
+let read ?format_options book chapter verse ~translation ~output ~chapters_mode =
   Option.iter (fun output_dir ->
     ensure_dir output_dir;
     printf "\nSaving output to %s.\n%!" output_dir) output;
@@ -117,9 +130,9 @@ let read ?format_options book chapter verse ~translation ~output =
   let options = Option.value ~default: default_options format_options in
   (* printf "\nUsing the %s translation.\n%!" translation; *)
   match book, chapter, verse with
-    | None, _, _ -> read_bible translation output options
-    | Some b, None, _ -> read_book translation b output options
-    | Some b, Some chap, None -> build_chapter translation b chap output options
+    | None, _, _ -> read_bible translation output options chapters_mode
+    | Some b, None, _ -> read_book translation b output options chapters_mode
+    | Some b, Some chap, None -> build_chapter translation b chap output options chapters_mode
     | Some b, Some chap, Some v -> build_verse translation b chap v (Option.fold
         ~none: print_endline
         ~some: (fun dir -> (fun content -> Out_channel.with_open_text (sprintf "%s/%s_%d_%d.md" dir b chap v) (fun oc -> output_string oc content)))
@@ -161,9 +174,13 @@ let seamless_mode =
   let doc = "Hide all extraneous markings, such as chapter breaks and verse numbers, for a seamless reading experience." in
   Arg.(value & flag & info ["seamless"] ~doc)
 
+let chapters_mode =
+  let doc = "When used with --output, save one Markdown file per chapter instead of per verse." in
+  Arg.(value & flag & info ["c"; "chapters"] ~doc)
+
 let cmd =
   Cmd.v (Cmd.info "read" ~doc:"Prints a reference") @@
-  let+ translation and+ book and+ chapter and+ verse and+ output and+ hide_verse_numbers and+ hide_headings and+ hide_chapters and+ seamless_mode in
+  let+ translation and+ book and+ chapter and+ verse and+ output and+ hide_verse_numbers and+ hide_headings and+ hide_chapters and+ seamless_mode and+ chapters_mode in
   let options = if seamless_mode then
   {
     showVerses = false;
@@ -174,18 +191,18 @@ let cmd =
     showHeadings = not hide_headings;
     showChapters = not hide_chapters;
   } in
-  read book chapter verse ~translation ~output ~format_options:options
+  read book chapter verse ~translation ~output ~format_options:options ~chapters_mode
 
 let%expect_test "read a verse" =
-  read ~translation: "BSB" (Some "John") (Some 3) (Some 16) ~output: None;
+  read ~translation: "BSB" (Some "John") (Some 3) (Some 16) ~output: None ~chapters_mode:false;
   [%expect{| For God so loved the world that He gave His one and only Son, that everyone who believes in Him shall not perish but have eternal life. |}]
 
 let%expect_test "read a verse (KJV)" =
-  read ~translation: "eng_kjv" (Some "John") (Some 3) (Some 16) ~output: None;
+  read ~translation: "eng_kjv" (Some "John") (Some 3) (Some 16) ~output: None ~chapters_mode:false;
   [%expect{| ¶ For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life. |}]
 
 let%expect_test "read a chapter" =
-  read ~translation: "BSB" (Some "Psalms") (Some 117) None ~output: None;
+  read ~translation: "BSB" (Some "Psalms") (Some 117) None ~output: None ~chapters_mode:false;
   [%expect{|
     ### Extol Him, All You Peoples
 
@@ -202,7 +219,7 @@ let%expect_test "read a chapter" =
     |}]
 
 let%expect_test "No verse breaks" =
-  read ~translation: "BSB" ~output: None ~format_options: { showVerses = false; showHeadings = true; showChapters = true; } (Some "Jude") None None;
+  read ~translation: "BSB" ~output: None ~format_options: { showVerses = false; showHeadings = true; showChapters = true; } (Some "Jude") None None ~chapters_mode:false;
   [%expect{|
     # ~~~ Chapter 1 ~~~
 
@@ -248,7 +265,7 @@ let%expect_test "No verse breaks" =
     |}]
 
 let%expect_test "No headings" =
-  read ~translation: "BSB" ~output: None ~format_options: { showVerses = true; showHeadings = false; showChapters = true; } (Some "Jude") None None;
+  read ~translation: "BSB" ~output: None ~format_options: { showVerses = true; showHeadings = false; showChapters = true; } (Some "Jude") None None ~chapters_mode:false;
   [%expect{|
     # ~~~ Chapter 1 ~~~
 
@@ -325,7 +342,7 @@ let%expect_test "No headings" =
     |}]
 
 let%expect_test "No chapter breaks" =
-  read ~translation: "BSB" ~output: None ~format_options: { showVerses = true; showHeadings = true; showChapters = false; } (Some "Titus") None None;
+  read ~translation: "BSB" ~output: None ~format_options: { showVerses = true; showHeadings = true; showChapters = false; } (Some "Titus") None None ~chapters_mode:false;
   [%expect{|
     ### Paul’s Greeting to Titus
 
@@ -462,7 +479,7 @@ let%expect_test "No chapter breaks" =
     |}]
 
 let%expect_test "Seamless reading mode" =
-  read ~translation: "BSB" ~output: None ~format_options: { showVerses = false; showHeadings = false; showChapters = false; } (Some "Titus") None None;
+  read ~translation: "BSB" ~output: None ~format_options: { showVerses = false; showHeadings = false; showChapters = false; } (Some "Titus") None None ~chapters_mode:false;
   [%expect{|
     Paul, a servant of God and an apostle of Jesus Christ for the faith of God’s elect and their knowledge of the truth that leads to godliness, in the hope of eternal life, which God, who cannot lie, promised before time began. In His own time He has made His word evident in the proclamation entrusted to me by the command of God our Savior.
 
@@ -509,7 +526,7 @@ let%expect_test "Seamless reading mode" =
     |}]
 
 let%expect_test "read a book" =
-  read (Some "Obadiah") None None ~translation: "BSB" ~output: None;
+  read (Some "Obadiah") None None ~translation: "BSB" ~output: None ~chapters_mode:false;
   [%expect{|
     # ~~~ Chapter 1 ~~~
 
@@ -658,4 +675,22 @@ let%expect_test "read a book" =
     to rule over the mountains of Esau.
 
     And the kingdom will belong to the LORD.
+    |}]
+
+(* Test that chapters_mode parameter affects no stdout output *)
+let%expect_test "chapters mode with stdout output (no difference expected)" =
+  read ~translation: "BSB" (Some "Psalms") (Some 117) None ~output: None ~chapters_mode:true;
+  [%expect{|
+    ### Extol Him, All You Peoples
+
+    1
+
+    Praise the LORD, all you nations!
+    Extol Him, all you peoples!
+    2
+
+    For great is His loving devotion toward us,
+    and the faithfulness of the LORD endures forever.
+
+    Hallelujah!
     |}]
