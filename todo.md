@@ -2,16 +2,9 @@
 
 ## Now
 
-- [ ] Formatting options
-  - [ ] Hide chapter breaks
-  - [ ] Hide verse numbers
-  - [ ] Hide headings
-
-## Upcoming
-
 - [ ] Obsidian template, linking verses, etc (handlebars?)
 
-## A bit later
+## Upcoming
 
 - [ ] Build Obsidian "maps"
     notes with either links to their children,
@@ -19,6 +12,9 @@
   - [ ] Chapter
   - [ ] Book
   - [ ] Bible
+
+## A bit later
+
 - [ ] Improve help output / man pages
 - [ ] Progress indications
 
@@ -49,3 +45,7 @@
 - [x] Flag to sort books by chronology
 - [x] Flag for translation
 - [x] Saving to disk (--output [DIRECTORY])
+- [x] Formatting options
+  - [x] Hide chapter breaks
+  - [x] Hide verse numbers
+  - [x] Hide headings

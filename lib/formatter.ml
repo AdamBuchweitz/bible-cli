@@ -1,6 +1,12 @@
 open Printf
 open Models
 
+type format_options = {
+  showVerses: bool;
+  showHeadings: bool;
+  showChapters: bool;
+}
+
 let format_verse content =
   List.map (fun (v : verse_content) -> match v with
     | Text t -> t ^ " "
@@ -18,14 +24,14 @@ let format_hebrew_subtitle content =
     | Note _ -> acc
   ) : string -> hebrew_subtitle_content -> string) "" content
 
-let format_chapter_content chapter_content =
+let format_chapter_content chapter_content options =
   List.map
     (fun item -> (match item with
-      | LineBreak -> ""
-      | Heading x -> List.fold_left (fun acc c -> sprintf "%s\n### %s" acc c) "" x.content
+      | LineBreak -> "\n\n"
+      | Heading x -> if options.showHeadings then List.fold_left (fun acc c -> sprintf "%s\n\n\n### %s\n" acc c) "" x.content else String.empty
       | HebrewSubtitle x -> sprintf "\n%s" (format_hebrew_subtitle x.content)
-      | Verse x -> sprintf "%d\n%s" x.number (format_verse x.content)
+      | Verse x -> if options.showVerses then (sprintf "\n%d\n%s" x.number (format_verse x.content)) else format_verse x.content
     )) chapter_content
-  |> String.concat "\n"
+  |> String.concat ""
 
 let space_to_underscore = String.map (fun c -> if c = ' ' then '_' else c)

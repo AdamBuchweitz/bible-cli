@@ -1,6 +1,6 @@
 # bible-cli
 
-A command-line interface for accessing Bible content from the bible.helloao.org API. Supports listing available translations and books, reading specific chapters or entire books, and exporting content to files.
+A command-line interface for accessing Bible content from the bible.helloao.org API. Supports listing available translations and books, reading specific vreses, chapters, or entire books, and exporting content to files.
 
 ## Usage
 
@@ -14,6 +14,10 @@ bible list books --chronological
 # Read a verse
 bible read John 3 16
 
+# Standard output fully pipable to other applications
+bible read Romans 5 8 | wl-copy
+bible read 1_John 1 9 | pbcopy
+
 # Read a chapter
 bible read Psalms 117
 
@@ -24,7 +28,7 @@ bible read Titus
 bible read
 
 # Save output to a folder
-bible read --translation eng-kjv --output ./Bible/KJV/
+bible read --translation eng_kjv --output ./Bible/KJV/
 ```
 
 ## Development
@@ -50,6 +54,7 @@ dune build
 
 # Run the CLI
 dune exec bible
+dune exec bible -- list books -a
 ```
 
 ### Windows
