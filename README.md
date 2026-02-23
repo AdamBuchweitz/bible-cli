@@ -1,6 +1,6 @@
 # bible-cli
 
-A command-line interface for accessing Bible content from the bible.helloao.org API. Supports listing available translations and books, reading specific vreses, chapters, or entire books, and exporting content to files.
+A command-line interface for accessing Bible content from the bible.helloao.org API. Supports listing available translations and books, reading specific verses, chapters, or entire books, and exporting content to files.
 
 ## Usage
 
