@@ -35,9 +35,7 @@ let build_verse translation book chap verse output =
 
 let build_chapter translation book chap output options chapters_mode =
   let response = Api.fetch_chapter translation book chap in
-  let content = Some (format_chapter_content response.chapter.content options)
-    |> Option.fold ~none: (sprintf "Unable to find %s %d" book chap) ~some: Fun.id
-  in
+  let content = format_chapter_content response.chapter.content options in
   match output with
   | None -> print_endline content
   | Some output_dir ->
@@ -81,9 +79,7 @@ let read_book translation book output options chapters_mode =
       let content = format_chapter_content chapter.content options in
       if options.showChapters then sprintf "\n\n\n# ~~~ Chapter %d ~~~\n\n%s" (i+1) content else content ) built_book
     |> String.concat ""
-    |> Str.global_replace (Str.regexp "\n\n\n") "\n\n"
-    |> Str.global_replace (Str.regexp "\n\n\n") "\n\n"
-    |> Str.global_replace (Str.regexp "\n\n\n") "\n\n"
+    |> Str.global_replace (Str.regexp "\n\n\n+") "\n\n"
     |> print_endline
   | Some output_dir ->
     if chapters_mode then
@@ -97,9 +93,7 @@ let read_bible translation output options chapters_mode =
   let char = input_char stdin in
   let _ = input_char stdin in
   if (Char.lowercase_ascii char) = 'y' then
-    let book_list = Api.fetch_books translation
-      |> List.rev
-      |> List.take 2 in
+    let book_list = Api.fetch_books translation |> List.rev in
     let book_lists = List.map (fun book -> book.commonName, build_book translation book.id) book_list in
     match output with
     | None ->

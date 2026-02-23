@@ -27,17 +27,23 @@ let list_books sort_order =
     | Alphabetical -> sort_by_alphabetical_order
     | Chronological -> sort_by_chronological_order
   in
+  let displayed_position = match sort_order with
+    | Traditional -> (fun item -> item.traditional_order)
+    | Alphabetical -> (fun item -> item.alphabetical_order)
+    | Chronological -> (fun item -> item.chronological_order)
+  in
   bible_books
   |> sort
-  |> List.fold_left (fun acc item -> sprintf "%s\n%02d | %s" acc item.traditional_order item.name) ""
+  |> List.fold_left (fun acc item -> sprintf "%s\n%02d | %s" acc (displayed_position item) item.name) ""
   |> print_endline
 
 type list_type = Translations | Books
 
 let list target ~sort_order () =
-  Printf.printf "The books of the Bible, sorted %sly:\n" (sort_str sort_order);
   match target with
-  | Books -> list_books sort_order
+  | Books ->
+    Printf.printf "The books of the Bible, sorted %sly:\n" (sort_str sort_order);
+    list_books sort_order
   | Translations -> list_translations ()
 
 open Cmdliner
